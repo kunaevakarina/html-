@@ -1,0 +1,314 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Требования безопасности к серверам баз данных</title>
+     <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .definition {
+            margin-bottom: 20px;
+        }
+        
+        .term {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .description {
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Требования безопасности к серверам баз данных</h1>
+            <p>Классы защиты</p>
+        </header>
+        
+        <div class="content">
+            <div class="lecture-goal">
+                <h2>Цель лекции</h2>
+                <p>Сформировать системное понимание угроз безопасности СУБД и выработать практические навыки по их защите на разных уровнях.</p>
+            </div>
+            
+            <div class="key-thesis">
+                <p>База данных — это «золотой фонд» компании. Её компрометация ведет к катастрофическим последствиям: утечке персональных данных, финансовым потерям, репутационному ущербу и административным штрафам. Безопасность БД — это не «фича», а обязательная базовая функция.</p>
+            </div>
+            
+            <h2>Введение: Почему безопасность БД — это важно?</h2>
+            
+            <div class="card">
+                <h3>1. Ценность данных</h3>
+                <p>БД хранят ПДн, финансовую отчетность, коммерческую тайну, интеллектуальную собственность.</p>
+                
+                <h3>2. Последствия взлома</h3>
+                <ul>
+                    <li><strong>Прямые убытки:</strong> Кража денег, штрафы по GDPR, КоАП, PCI DSS.</li>
+                    <li><strong>Репутационные потери:</strong> Утрата доверия клиентов и партнеров.</li>
+                    <li><strong>Операционные потери:</strong> Остановка бизнес-процессов, шантаж (ransomware).</li>
+                </ul>
+            </div>
+            
+            <h2>Часть 1: Многоуровневая модель безопасности (Defense in Depth)</h2>
+            <p>Защита должна быть многослойной, как замок с несколькими дверьми.</p>
+            
+            <div class="security-levels">
+                <div class="security-level">
+                    <div class="level-header">
+                        <div class="level-number">1</div>
+                        <h3>Уровень сети (Network Security)</h3>
+                    </div>
+                    <p><strong>Принцип:</strong> «Спрятать» СУБД от всего мира.</p>
+                    
+                    <div class="measures">
+                        <h4>Меры:</h4>
+                        <ul>
+                            <li><strong>Изоляция:</strong> Размещение БД в отдельном, изолированном сегменте сети (DMZ, VLAN).</li>
+                            <li><strong>Никаких прямых подключений из интернета.</strong></li>
+                            <li><strong>Firewall (Брандмауэр):</strong>
+                                <ul>
+                                    <li><strong>Хостовый:</strong> iptables (Linux), Windows Firewall.</li>
+                                    <li><strong>Сетевой:</strong> Правила, разрешающие входящие подключения только с конкретных IP-адресов application-серверов (принцип наименьших привилегий на сетевом уровне).</li>
+                                    <li><strong>Запрет</strong> всех неиспользуемых портов.</li>
+                                    <li><strong>Шифрование трафика:</strong> Использование SSL/TLS для соединений между приложением и БД. Защита от сниффинга (перехвата трафика).</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="security-level">
+                    <div class="level-header">
+                        <div class="level-number">2</div>
+                        <h3>Уровень доступа к серверу (Host Security)</h3>
+                    </div>
+                    <p><strong>Принцип:</strong> Укрепить ОС, на которой работает СУБД.</p>
+                    
+                    <div class="measures">
+                        <h4>Меры:</h4>
+                        <ul>
+                            <li><strong>Минимизация поверхности атаки:</strong> Удаление всех ненужных пакетов, служб, отключение неиспользуемых портов.</li>
+                            <li><strong>Своевременное обновление:</strong> Регулярный патчинг ОС и СУБД для устранения известных уязвимостей.</li>
+                            <li><strong>Дисковая шифровка:</strong> Full-disk encryption (e.g., LUKS, BitLocker) для защиты данных на физическом носителе.</li>
+                            <li><strong>Отдельный пользователь ОС:</strong> Запуск СУБД от имени непривилегированного пользователя (не root!).</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="security-level">
+                    <div class="level-header">
+                        <div class="level-number">3</div>
+                        <h3>Уровень доступа к СУБД (Database Access Control)</h3>
+                    </div>
+                    <p><strong>Принцип:</strong> Аутентификация и авторизация.</p>
+                    
+                    <div class="measures">
+                        <h4>Меры:</h4>
+                        <ul>
+                            <li><strong>Сильные пароли:</strong> Политика сложности паролей, регулярная смена.</li>
+                            <li><strong>Отказ от учетных записей по умолчанию:</strong> Переименование или блокировка root/sa/postgres.</li>
+                            <li><strong>Принцип наименьших привилегий (Least Privilege):</strong> Пользователь/приложение получает ровно те права, которые нужны для работы, и не более.
+                                <ul>
+                                    <li><em>Пример:</em> Пользователю для веб-приложения не нужны права CREATE TABLE, DROP, GRANT OPTION.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Разделение обязанностей (SoD):</strong> Администратор БД, администратор безопасности, оператор резервного копирования — должны быть разные люди/учетные записи.</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="security-level">
+                    <div class="level-header">
+                        <div class="level-number">4</div>
+                        <h3>Уровень данных (Data Security)</h3>
+                    </div>
+                    <p><strong>Принцип:</strong> Защита данных даже при компрометации вышележащих уровней.</p>
+                    
+                    <div class="measures">
+                        <h4>Меры:</h4>
+                        <ul>
+                            <li><strong>Шифрование данных:</strong>
+                                <ul>
+                                    <li><strong>Transparent Data Encryption (TDE):</strong> Шифрование «на лету» на уровне табличного пространства/файлов БД. Защищает от кражи файлов данных.</li>
+                                    <li><strong>Шифрование на уровне столбца (Column-level Encryption):</strong> Для особо чувствительных данных (пароли, номера карт). Данные шифруются при записи и расшифровываются при чтении с помощью ключа.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Маскирование данных (Data Masking):</strong> Для тестовых и сред разработки. Реальные данные заменяются на правдоподобные фиктивные.</li>
+                            <li><strong>Хэширование:</strong> Для хранения паролей обязательно использовать современные алгоритмы хэширования с солью (bcrypt, scrypt, Argon2). Никогда не хранить пароли в открытом виде!</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="security-level">
+                    <div class="level-header">
+                        <div class="level-number">5</div>
+                        <h3>Уровень аудита и мониторинга (Auditing & Monitoring)</h3>
+                    </div>
+                    <p><strong>Принцип:</strong> Обнаружение и расследование инцидентов.</p>
+                    
+                    <div class="measures">
+                        <h4>Меры:</h4>
+                        <ul>
+                            <li><strong>Включение ведения логов:</strong> Логирование всех попыток входа (успешных и неуспешных), попыток доступа к БД, изменений схемы БД.</li>
+                            <li><strong>Centralized Logging:</strong> Отправка логов на выделенный сервер (логсервер) для защиты от модификации злоумышленником.</li>
+                            <li><strong>SIEM-системы:</strong> Использование систем для анализа логов и выявления аномалий (например, 1000 попыток входа за минуту с одного IP).</li>
+                            <li><strong>Регулярный аудит:</strong> Проверка настроек безопасности, прав пользователей.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <h2>Часть 2: Классы защиты / Стандарты безопасности (Security Standards)</h2>
+            <p>Это формализованные требования, которые предъявляются к системам в зависимости от важности обрабатываемых данных.</p>
+            
+            <table class="standards-table">
+                <thead>
+                    <tr>
+                        <th>Стандарт / Регламент</th>
+                        <th>Сфера применения</th>
+                        <th>Ключевые требования к БД</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ФСТЭК России (Приказы № 21, 31, 239)</strong></td>
+                        <td>Защита информации в ГИС (гос. информационных системах). Определяет классы защищенности (К31-К34).</td>
+                        <td>
+                            <strong>К31 (самый высокий):</strong>
+                            <ul>
+                                <li>Аудит всех событий безопасности.</li>
+                                <li>Мандатное управление доступом (МСВ).</li>
+                                <li>Визуальная изоляция данных разных уровней конфиденциальности.</li>
+                                <li>Сертифицированные СЗИ.</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>152-ФЗ «О персональных данных»</strong></td>
+                        <td>Любые операторы, обрабатывающие ПДн граждан РФ. Уровни защищенности (высокий, средний, базовый).</td>
+                        <td>
+                            <ul>
+                                <li>Шифрование ПДн при передаче и хранении.</li>
+                                <li>Разграничение прав доступа.</li>
+                                <li>Учет и хранение машинных носителей.</li>
+                                <li>Обнаружение вторжений.</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>PCI DSS (Payment Card Industry)</strong></td>
+                        <td>Организации, работающие с банковскими картами.</td>
+                        <td>
+                            <ul>
+                                <li>Шифрование данных картодержателей (CHD).</li>
+                                <li>Защита от SQL-инъекций.</li>
+                                <li>Строгое управление доступом.</li>
+                                <li>Регулярное тестирование систем.</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>GDPR (General Data Protection Regulation)</strong></td>
+                        <td>Любые компании, обрабатывающие ПДн граждан ЕС.</td>
+                        <td>
+                            <ul>
+                                <li>Privacy by Design (защита на этапе проектирования).</li>
+                                <li>Минимизация данных (хранить только необходимое).</li>
+                                <li>Уведомление о утечках в течение 72 часов.</li>
+                            </ul>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>ISO/IEC 27001</strong></td>
+                        <td>Международный стандарт системы менеджмента информационной безопасности (СМИБ).</td>
+                        <td>
+                            <ul>
+                                <li>Системный подход к управлению рисками.</li>
+                                <li>Постоянное улучшение (цикл PDCA).</li>
+                                <li>Документирование политик и процедур.</li>
+                            </ul>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="checklist">
+                <h2>Практические выводы и checklist</h2>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check1">
+                    <label for="check1">Изолируйте сервер БД от интернета.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check2">
+                    <label for="check2">Настройте firewall для white-listing IP-адресов application-серверов.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check3">
+                    <label for="check3">Обновляйте ОС и СУБД регулярно.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check4">
+                    <label for="check4">Запретите/смените пароли учетных записей по умолчанию.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check5">
+                    <label for="check5">Создавайте отдельных пользователей для каждого приложения с минимальными правами.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check6">
+                    <label for="check6">Включайте шифрование (TDE) и SSL/TLS для соединений.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check7">
+                    <label for="check7">Хэшируйте пароли с помощью bcrypt/Argon2.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check8">
+                    <label for="check8">Включайте логирование и настройте мониторинг подозрительной активности.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check9">
+                    <label for="check9">Регулярно делайте бэкапы и тестируйте их восстановление.</label>
+                </div>
+                
+                <div class="checklist-item">
+                    <input type="checkbox" class="checklist-checkbox" id="check10">
+                    <label for="check10">Проводите регулярный аудит безопасности (например, с помощью сканеров уязвимостей).</label>
+                </div>
+            </div>
+            
+            <div class="conclusion">
+                <p>Итог: Безопасность БД — это непрерывный процесс, а не разовое действие. Она требует комплексного подхода, покрывает все уровни: от физического до уровня приложений, и должна быть основана на принципах «запрещено всё, что не разрешено явно» и «минимум привилегий».</p>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Лекция: Требования безопасности к серверам баз данных. Классы защиты</p>
+        </footer>
+    </div>
+</body>
+</html>
